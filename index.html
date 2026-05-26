@@ -1,4 +1,21 @@
-import { useState, useEffect } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLL Card Game Demo</title>
+  <style>
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  </style>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect } = React;
+
 
 const TYPE_COLORS = {
   "Straight Shot": "#C00000",
@@ -529,7 +546,7 @@ function FeedbackScreen({ onBack }) {
   );
 }
 
-export default function App() {
+function App() {
   const [screen, setScreen] = useState(0);
   return (
     <div style={{ fontFamily:"'Helvetica Neue', Helvetica, Arial, sans-serif", margin:0, padding:0 }}>
@@ -541,3 +558,9 @@ export default function App() {
     </div>
   );
 }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
