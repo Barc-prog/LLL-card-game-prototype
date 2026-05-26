@@ -1,0 +1,543 @@
+import { useState, useEffect } from "react";
+
+const TYPE_COLORS = {
+  "Straight Shot": "#C00000",
+  "Three-for-Three": "#375623",
+  "Qhuba": "#7F6000",
+  "Sbonise": "#3A3A3A",
+  "Connexxion": "#1F3864",
+  "Order, Comrade!": "#8B4513",
+  "Who's Who?": "#6A0DAD",
+  "Head-to-Head": "#D2691E",
+  "Bring and Share": "#2E8B57",
+};
+
+const TYPE_META = {
+  "Straight Shot": { subtitle: "", mode: "Standard", desc: "One question, one answer. The bread and butter — fast, clean, next card." },
+  "Three-for-Three": { subtitle: "", mode: "Standard", desc: "One question, three answers. Reader confirms each one-by-one. Partial credit — you score what you know." },
+  "Qhuba": { subtitle: "Complete it", mode: "Standard", desc: "A lyric, proverb, or saying — the card gives the start, you finish it. Cultural fluency, not just knowledge." },
+  "Sbonise": { subtitle: "Perform", mode: "Standard", desc: "Act, sing, dance, impersonate. Both teams perform. Judge each other: thumbs up or down." },
+  "Connexxion": { subtitle: "What's the link?", mode: "Standard", desc: "Three items on the card. Name what connects them. How does your culture fit together?" },
+  "Order, Comrade!": { subtitle: "Put them in order, for a given criterion", mode: "Standard", desc: "Three items, one ordering criterion. Put them in the right sequence. Creates fierce pair debate." },
+  "Who's Who?": { subtitle: "Guess the person", mode: "Standard", desc: "Three clues, vague to specific. Clue 1 first — guess or wait? Each new clue makes it easier but the points stay flat for now." },
+  "Head-to-Head": { subtitle: "Both teams answer", mode: "Host", desc: "Multiple choice — both teams answer simultaneously. Needs a host/GM to manage. A future season format." },
+  "Bring and Share": { subtitle: "Play together", mode: "Host", desc: "Both teams collaborate, alternating answers. First team that stalls loses points. Needs a host/GM. A future season format." },
+};
+
+const CARDS = [
+  { id:1, type:"Straight Shot", block:"Tsa Mmino", blockEn:"Music", pts:"1pt", q:"An iconic Isicathamiya/Mbube choral group with 5 Grammy awards.", a:"Ladysmith Black Mambazo" },
+  { id:2, type:"Straight Shot", block:"eRenkini", blockEn:"Taxi rank", pts:"1pt", q:"What is the sliding door operator on taxis known as?", a:"Scabha boy / Kondi / Vula Vala / Gaatjie" },
+  { id:3, type:"Straight Shot", block:"Ko Skolong", blockEn:"School", pts:"1pt", q:"The packaging for this brand of rice was often repurposed as a school bag.", a:"Tastic" },
+  { id:4, type:"Straight Shot", block:"eDladleni", blockEn:"Home", pts:"1pt", q:'A makeshift toy car used to "phihliza" or smash people\'s relationships?', a:"Stena / Stina" },
+  { id:5, type:"Straight Shot", block:"Dot Kasi Dot Com", blockEn:"Internet culture", pts:"1pt", q:"The confectionary nickname for president Cyril Ramaphosa.", a:"Cupcake" },
+  { id:6, type:"Straight Shot", block:"Tsa Tshepo", blockEn:"Faith", pts:"1pt", q:"A plant commonly used to communicate with abaphansi.", a:"Impepho" },
+  { id:7, type:"Straight Shot", block:"eGroundini", blockEn:"Sports", pts:"1pt", q:"The scorer of the first goal during the 2010 FIFA World Cup.", a:"Siphiwe 'Shabba' Tshabalala" },
+  { id:8, type:"Straight Shot", block:"Tsa Baholo", blockEn:"Elders & tradition", pts:"1pt", q:"In the African native knowledge system, which twin is regarded the eldest?", a:"The second one to be born" },
+  { id:9, type:"Straight Shot", block:"eStratweni", blockEn:"Street life", pts:"1pt", q:"A marriage proposal that is also a car brand?", a:"BMW (Be My Wife)" },
+  { id:10, type:"Straight Shot", block:"Tsa Polotiki", blockEn:"Politics", pts:"1pt", q:'The student movement which sparked what we now call "fallism"?', a:"#FeesMustFall / #RhodesMustFall" },
+  { id:11, type:"Straight Shot", block:"eBumnandini", blockEn:"Entertainment", pts:"1pt", q:'Who made the proclamation that "ebumnandini yi la uzong\'thola khona"?', a:"Doc Shebeleza" },
+  { id:12, type:"Straight Shot", block:"eSalooni", blockEn:"Hair & beauty", pts:"1pt", q:"Former Johannesburg mayor Herman Mashaba is the founder of which hair product range?", a:"Black Like Me" },
+  { id:13, type:"Three-for-Three", block:"eDladleni", blockEn:"Home", pts:"1pt each", q:"Give me three different names for the portable late night toilet kept in the bedroom?", a:"Tshemba · Skiki · Slopemere" },
+  { id:14, type:"Three-for-Three", block:"eSalooni", blockEn:"Hair & beauty", pts:"1pt each", q:"Name three other names for a bald haircut besides Chiskop.", a:"Penyenye · Letwadi · Nqayi" },
+  { id:15, type:"Three-for-Three", block:"Ko Skolong", blockEn:"School", pts:"1pt each", q:"Name three public school curriculums introduced after Bantu education.", a:"OBE · NCS · CAPS" },
+  { id:16, type:"Three-for-Three", block:"Tsa Dipuo", blockEn:"Language & slang", pts:"1pt each", q:"Name the 3 most known dialects of Northern Sotho in South Africa.", a:"Sepedi · Khelobedu · SeTokwa" },
+  { id:17, type:"Three-for-Three", block:"eMakhaya", blockEn:"Rural homelands", pts:"1pt each", q:"What are three indigenous names for a handmade grass mat?", a:"Legogwa · Icansi · Ukhukho" },
+  { id:18, type:"Qhuba", block:"Ko Skolong", blockEn:"School", pts:"1pt", q:'Finish the nursery rhyme: "Bana ba sekolo..."', a:'"...Tloong sekolong"' },
+  { id:19, type:"Qhuba", block:"Tsa Mmino", blockEn:"Music", pts:"1pt", q:'Finish this lyric: "Eugeneeee. Mandlaaa. Zaneeey. JAAAI-rus!"', a:'"...e Magas man yatshoroza!"' },
+  { id:20, type:"Qhuba", block:"Tsa Baholo", blockEn:"Elders & tradition", pts:"1pt", q:'Finish this Xhosa saying: "Inyathi ibuzwa..."', a:'"...kubaphambili"' },
+  { id:21, type:"Qhuba", block:"eBumnandini", blockEn:"Entertainment", pts:"1pt", q:'Finish this party phrase: "Dee Jay..."', a:'"...We wanna party"' },
+  { id:22, type:"Sbonise", block:"eRenkini", blockEn:"Taxi rank", pts:"3pts", q:"Impersonate one of those people going taxi to taxi selling snacks or rat poison or anything.", a:"Both teams perform. Full marks for voices AND actions.", isSbonise:true },
+  { id:23, type:"Sbonise", block:"Tsa Mmino", blockEn:"Music", pts:"3pts", q:"Sing and dance the SIGNATURE move of any kwaito artist — you only win if the other team can figure out the artist.", a:"Both teams perform. Thumbs up/down.", isSbonise:true },
+  { id:24, type:"Sbonise", block:"Tsa Tshepo", blockEn:"Faith", pts:"3pts", q:"Impersonate a born-again/mzalwane church pastor mid sermon. Be funny but respectful :-)", a:"Both teams perform. Full marks for voice and actions.", isSbonise:true },
+  { id:25, type:"Straight Shot", block:"eKitchini", blockEn:"Food & cooking", pts:"1pt", q:"What is the main ingredient of umqombothi called in English?", a:"Sorghum / sorghum grain", isNew:true },
+  { id:26, type:"Straight Shot", block:"Tsa Mzali", blockEn:"Parenting & growing up", pts:"1pt", q:"What symbolic gift is given to someone at their 21st birthday party?", a:"A key", isNew:true },
+  { id:27, type:"Connexxion", block:"Tsa Mmino", blockEn:"Music", pts:"1pt", q:"What connects: Zahara, PRO-Kid, Robbie Malinga?", a:"All TS Records signed artists" },
+  { id:28, type:"Connexxion", block:"Tsa Polotiki", blockEn:"Politics", pts:"1pt", q:"What connects: Raymond Mhlaba, Morris Isaacson High School, Tsietsi Mashinini?", a:"All involved in the June 16, 1976 Soweto uprising" },
+  { id:29, type:"Connexxion", block:"eDladleni", blockEn:"Home", pts:"1pt", q:"What connects: Weetbix, Pro Nutro, Nature's Source?", a:"All brands by Bokomo" },
+  { id:30, type:"Connexxion", block:"eBumnandini", blockEn:"Entertainment", pts:"1pt", q:"What connects: Konka, Zone 6, Sakhumzi?", a:"Soweto night spots" },
+  { id:31, type:"Order, Comrade!", block:"Tsa Mmino", blockEn:"Music", pts:"1pt", q:"Oldest to newest:", a:"Bubblegum pop → Kwaito → Amapiano", items:["Kwaito","Amapiano","Bubblegum pop"] },
+  { id:32, type:"Order, Comrade!", block:"Tsa Polotiki", blockEn:"Politics", pts:"1pt", q:"Put in chronological order:", a:"Rivonia Trial → CODESA → Marikana", items:["CODESA","Rivonia Trial","Marikana"] },
+  { id:33, type:"Order, Comrade!", block:"Ko Skolong", blockEn:"School", pts:"1pt", q:"Oldest to newest:", a:"Bantu Education → OBE → CAPS", items:["OBE","CAPS","Bantu Education"] },
+  { id:34, type:"Order, Comrade!", block:"eSalooni", blockEn:"Hair & beauty", pts:"1pt", q:"Which trend came first?", a:"Afro → S-Curl → Fade", items:["S-Curl","Fade","Afro"] },
+  { id:35, type:"Who's Who?", block:"Tsa Mmino", blockEn:"Music", pts:"1pt", q:"Who am I?", clues:["South African rapper who went to St John's College in Houghton.","His former band mate was called Vice Versa.","His catalogue has gone 8x platinum."], a:"AKA" },
+  { id:36, type:"Who's Who?", block:"eGroundini", blockEn:"Sports", pts:"1pt", q:"Who am I?", clues:["SA soccer player who played for English-side Blackburn Rovers.","Only SA soccer player to win the UEFA Champions League.","He is Bafana Bafana's all-time goal scorer."], a:"Benni McCarthy" },
+  { id:37, type:"Who's Who?", block:"Tsa Polotiki", blockEn:"Politics", pts:"1pt", q:"Who am I?", clues:["SA politician who was also a Zulu chief in Groutville, KZN.","A former president of the ANC.","He was the first African to win a Nobel Peace Prize."], a:"Albert Luthuli" },
+  { id:38, type:"Head-to-Head", block:"Tsa Dipuo", blockEn:"Language & slang", pts:"2pts", q:'What does the slang term "June-July" refer to?', options:["Two people who look alike","Attractive buttocks of a person while walking","Day and Night"], a:"Attractive buttocks of a person while walking", correctIdx:1, isHost:true },
+  { id:39, type:"Head-to-Head", block:"eBumnandini", blockEn:"Entertainment", pts:"2pts", q:'Which township is nicknamed "Dark City"?', options:["Alexandra","Mamelodi","Hamanskraal"], a:"Alexandra", correctIdx:0, isHost:true },
+  { id:40, type:"Bring and Share", block:"Tsa Dipuo", blockEn:"Language & slang", pts:"Special", q:"Name 7 South African slang terms for money. Teams alternate. First team that stalls loses 2pts.", a:"Nyuku · Chankura · Zaka · Imali · Crown · Lente · Maphepha", isHost:true },
+];
+
+const CORE_TYPES = ["Straight Shot","Three-for-Three","Qhuba","Sbonise"];
+const FUTURE_TYPES_NAMES = ["Connexxion","Order, Comrade!","Who's Who?","Head-to-Head","Bring and Share"];
+const ALL_TYPES = ["All", ...CORE_TYPES, ...FUTURE_TYPES_NAMES];
+
+const VIEWER_ORDER = ["All","Connexxion","Order, Comrade!","Who's Who?","Sbonise","Qhuba","Three-for-Three","Head-to-Head","Bring and Share","Straight Shot"];
+
+const FUTURE_TYPES_LIST = [
+  { name:"Connexxion", strong:true },
+  { name:"Order, Comrade!", strong:true },
+  { name:"Who's Who?", strong:true },
+  { name:"Head-to-Head", strong:false },
+  { name:"Bring and Share", strong:false },
+];
+
+const FUTURE_EDITIONS = [
+  { name:"Every Hood Every Ghetto", desc:"A global Blackness edition — diasporic culture from Kingston to Atlanta to London to Lagos." },
+  { name:"Umlando", desc:"A deep history edition — precolonial, colonial, struggle, post-apartheid." },
+  { name:"Durban / KZN Edition", desc:"KwaMashu, Umlazi, Phoenix — Durban-based writers, Durban knowledge." },
+  { name:"Cape Town / Western Cape", desc:"Cape Flats, Khayelitsha, Langa — Western Cape culture and history." },
+  { name:"South Africa Edition", desc:"If LLL Season 1 stays a Jozi/Gauteng edition, then this national edition is FOCUSED on national stuff." },
+];
+
+function IntroScreen({ onNext }) {
+  return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"2rem 1.5rem", background:"#111", color:"#f0ebe3" }}>
+      <div style={{ maxWidth:440, textAlign:"center" }}>
+        <div style={{ fontSize:11, letterSpacing:4, textTransform:"uppercase", color:"#C00000", marginBottom:28, fontWeight:600 }}>Prototype concept</div>
+        <h1 style={{ fontSize:30, fontWeight:700, lineHeight:1.15, marginBottom:12, fontFamily:"Georgia, serif" }}>LLL: The Card Game</h1>
+        <p style={{ fontSize:14, lineHeight:1.7, color:"#888", marginBottom:36 }}>Same cultural universe. Different format.<br/>No board, no GM, no setup. Pick up and play.</p>
+        <div style={{ background:"#1a1a1a", borderRadius:12, padding:"20px", textAlign:"left", marginBottom:36, border:"1px solid #282828" }}>
+          <p style={{ fontSize:13.5, lineHeight:1.7, color:"#aaa", margin:0 }}>A physical card game testing Black South African cultural knowledge. 200 cards across 4 or 5 card types per pack, plays 3–10 people in 15–60 minutes. Goes where gatherings already happen — braais, house parties, chillas.</p>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:14, textAlign:"left", marginBottom:44 }}>
+          {[
+            { n:"4", c:"#C00000", t:"card types — each creates a different moment in the room" },
+            { n:"17", c:"#375623", t:"content blocks from eKasi to eMakhaya to eBumnandini — and more to be developed" },
+            { n:"0", c:"#7F6000", t:"GM needed — teams read for each other" },
+            { n:"∞", c:"#1F3864", t:"region-specific packs, & digital supplementary packs possible" },
+          ].map((r,i) => (
+            <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+              <span style={{ color:r.c, fontWeight:800, fontSize:20, lineHeight:1, minWidth:24, textAlign:"right" }}>{r.n}</span>
+              <span style={{ fontSize:13.5, color:"#999", lineHeight:1.4 }}>{r.t}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={onNext} style={{ background:"#C00000", color:"#fff", border:"none", borderRadius:8, padding:"14px 48px", fontSize:14, fontWeight:600, cursor:"pointer", letterSpacing:0.5 }}>See the cards →</button>
+      </div>
+    </div>
+  );
+}
+
+function TurnScreen({ onNext, onBack }) {
+  const steps = [
+    { n:"1", l:"Draw", d:"Each team reads for the other team. One team draws, and the other team is active." },
+    { n:"2", l:"Read", d:"Opposing team reads aloud: card type, content block, then the question." },
+    { n:"3", l:"Answer", d:"Active team responds. Pairs can confer. For the Three-for-Three card type: answers confirmed one at a time." },
+    { n:"4", l:"Confirm", d:"Reader checks the answer (printed small and upside-down on the card). Right = score. Wrong = no points." },
+    { n:"5", l:"Swap", d:"Other team is now active. Next card." },
+  ];
+  return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"2rem 1.5rem", background:"#111", color:"#f0ebe3" }}>
+      <div style={{ maxWidth:440 }}>
+        <div style={{ fontSize:11, letterSpacing:4, textTransform:"uppercase", color:"#7F6000", marginBottom:16, fontWeight:600 }}>Gameplay</div>
+        <h2 style={{ fontSize:24, fontWeight:700, marginBottom:6, fontFamily:"Georgia, serif" }}>How a turn works</h2>
+        <p style={{ fontSize:13, color:"#777", marginBottom:28 }}>Five steps. Teachable in 30 seconds.</p>
+        {steps.map((s,i) => (
+          <div key={i} style={{ display:"flex", gap:14, alignItems:"flex-start", padding:"14px 0", borderTop:i===0?"none":"1px solid #1e1e1e" }}>
+            <div style={{ width:28, height:28, borderRadius:"50%", background:"#1a1a1a", border:"1px solid #333", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, color:"#7F6000", flexShrink:0 }}>{s.n}</div>
+            <div><div style={{ fontSize:13.5, fontWeight:600, marginBottom:3 }}>{s.l}</div><div style={{ fontSize:12.5, color:"#888", lineHeight:1.55 }}>{s.d}</div></div>
+          </div>
+        ))}
+        <div style={{ background:"#1a1a1a", borderRadius:10, padding:"14px 16px", marginTop:20, border:"1px solid #282828" }}>
+          <p style={{ fontSize:12.5, color:"#999", margin:0, lineHeight:1.6 }}><span style={{ fontWeight:600, color:"#ddd" }}>Scoring:</span> Straight Shot & Qhuba = 1pt. Three-for-Three = 1pt per answer. Sbonise = 3pts. First to target wins (15 / 25 / 40 / 60).</p>
+        </div>
+        <div style={{ display:"flex", gap:10, marginTop:28 }}>
+          <button onClick={onBack} style={{ flex:1, background:"transparent", color:"#666", border:"1px solid #282828", borderRadius:8, padding:"12px", fontSize:13, cursor:"pointer" }}>Back</button>
+          <button onClick={onNext} style={{ flex:2, background:"#7F6000", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:13, fontWeight:600, cursor:"pointer" }}>Browse the cards →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CardComponent({ card, showExplainer }) {
+  const [rotated, setRotated] = useState(false);
+  const [clueIdx, setClueIdx] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const typeColor = TYPE_COLORS[card.type] || "#666";
+  const meta = TYPE_META[card.type];
+
+  useEffect(() => { setRotated(false); setClueIdx(0); setShowAnswer(false); }, [card.id]);
+
+  const isWho = card.type === "Who's Who?";
+  const isOrder = card.type === "Order, Comrade!";
+  const isHtH = card.type === "Head-to-Head";
+  const isBnS = card.type === "Bring and Share";
+
+  return (
+    <div>
+      {showExplainer && (
+        <div style={{ background:"#1a1a1a", border:`1px solid ${typeColor}44`, borderRadius:10, padding:"12px 16px", marginBottom:12 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+            <span style={{ fontSize:10, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:typeColor }}>{card.type}</span>
+            {meta.mode === "Host" && <span style={{ fontSize:9, background:"#D2691E33", color:"#D2691E", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>Needs GM/Host</span>}
+          </div>
+          <p style={{ fontSize:12, color:"#999", margin:0, lineHeight:1.6 }}>{meta.desc}</p>
+        </div>
+      )}
+
+      <div style={{
+        transition:"transform 0.4s ease",
+        transform: rotated ? "rotate(180deg)" : "rotate(0deg)",
+        background:"#fff", borderRadius:12, overflow:"hidden", border:"1px solid #ddd",
+        minHeight:isWho ? 440 : isHtH ? 420 : 380,
+        display:"flex", flexDirection:"column",
+      }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 14px" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#fff", background:typeColor, padding:"3px 10px", borderRadius:20 }}>
+              {card.type}{meta.subtitle ? ` — ${meta.subtitle}` : ""}
+            </span>
+            {meta.mode === "Host" && <span style={{ fontSize:9, color:"#D2691E", fontWeight:600 }}>GM</span>}
+          </div>
+          <span style={{ fontSize:11, fontWeight:600, color:"#999" }}>{card.pts}</span>
+        </div>
+
+        <div style={{ padding:"6px 14px", background:"#f5f5f5", borderTop:"1px solid #eee", borderBottom:"1px solid #eee", display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:"#aaa" }}>{card.block}</span>
+          <span style={{ fontSize:11, color:"#ccc" }}>— {card.blockEn}</span>
+          {card.isNew && <span style={{ fontSize:8, background:"#C00000", color:"#fff", padding:"2px 7px", borderRadius:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", marginLeft:"auto" }}>New block</span>}
+        </div>
+
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding: isWho ? "16px 18px" : "20px 18px", gap:12 }}>
+          {isWho ? (
+            <>
+              <div style={{ width:"100%", display:"flex", flexDirection:"column", gap:8 }}>
+                {card.clues.map((c,i) => (
+                  <div key={i} style={{
+                    padding:"10px 14px", borderRadius:8,
+                    background: i <= clueIdx ? "#fafafa" : "#f0f0f0",
+                    border: i <= clueIdx ? "1px solid #ddd" : "1px solid #eee",
+                    opacity: i <= clueIdx ? 1 : 0.35,
+                  }}>
+                    <div style={{ fontSize:9, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color: i === 0 ? "#6A0DAD" : i === 1 ? "#999" : "#bbb", marginBottom:4 }}>
+                      Clue {i+1} {i === 0 ? "(vague)" : i === 1 ? "(medium)" : "(obvious)"}
+                    </div>
+                    <div style={{ fontSize:13.5, fontWeight:500, color: i <= clueIdx ? "#1a1a1a" : "#ccc", lineHeight:1.45 }}>
+                      {i <= clueIdx ? c : "—"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display:"flex", gap:8, marginTop:4 }}>
+                {clueIdx < 2 && !showAnswer && (
+                  <button onClick={(e) => { e.stopPropagation(); setClueIdx(clueIdx+1); }} style={{ background:"#6A0DAD", color:"#fff", border:"none", borderRadius:6, padding:"8px 16px", fontSize:11, fontWeight:600, cursor:"pointer" }}>Next clue</button>
+                )}
+                {!showAnswer && (
+                  <button onClick={(e) => { e.stopPropagation(); setShowAnswer(true); }} style={{ background:"#333", color:"#fff", border:"none", borderRadius:6, padding:"8px 16px", fontSize:11, fontWeight:600, cursor:"pointer" }}>Show answer</button>
+                )}
+              </div>
+              {showAnswer && (
+                <div style={{ background:"#6A0DAD11", border:"1px solid #6A0DAD33", borderRadius:8, padding:"10px 14px", textAlign:"center", width:"100%" }}>
+                  <div style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, textTransform:"uppercase", color:"#6A0DAD", marginBottom:4 }}>Answer</div>
+                  <div style={{ fontSize:20, fontWeight:700, color:"#1a1a1a" }}>{card.a}</div>
+                </div>
+              )}
+            </>
+          ) : isOrder ? (
+            <>
+              <div style={{ fontSize:12, fontWeight:600, color:"#8B4513", letterSpacing:1, textTransform:"uppercase" }}>{card.q}</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, width:"100%" }}>
+                {card.items.map((item,i) => (
+                  <div key={i} style={{ background:"#f9f6f2", border:"1px solid #e0d6c8", borderRadius:8, padding:"12px 16px", textAlign:"center", fontSize:16, fontWeight:600, color:"#1a1a1a" }}>{item}</div>
+                ))}
+              </div>
+            </>
+          ) : isHtH ? (
+            <>
+              <p style={{ fontSize:16, fontWeight:600, color:"#1a1a1a", textAlign:"center", lineHeight:1.45, margin:"0 0 12px" }}>{card.q}</p>
+              <div style={{ display:"flex", flexDirection:"column", gap:8, width:"100%" }}>
+                {card.options.map((opt,i) => (
+                  <div key={i} onClick={(e) => { e.stopPropagation(); setShowAnswer(true); }} style={{
+                    background: showAnswer && i === card.correctIdx ? "#2E8B5722" : "#fafafa",
+                    border: showAnswer && i === card.correctIdx ? "2px solid #2E8B57" : "1px solid #eee",
+                    borderRadius:8, padding:"12px 16px", cursor:"pointer",
+                    display:"flex", gap:10, alignItems:"center",
+                  }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:"#999", minWidth:18 }}>{String.fromCharCode(65+i)}</span>
+                    <span style={{ fontSize:14, fontWeight:500, color:"#1a1a1a" }}>{opt}</span>
+                    {showAnswer && i === card.correctIdx && <span style={{ marginLeft:"auto", fontSize:11, color:"#2E8B57", fontWeight:700 }}>✓</span>}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p style={{ fontSize:17, fontWeight:600, color:"#1a1a1a", textAlign:"center", lineHeight:1.5, margin:0 }}>{card.q}</p>
+          )}
+        </div>
+
+        {!isWho && !isHtH && (
+          <div style={{ padding:"10px 14px", borderTop:"1px solid #eee", background:"#f8f8f8" }}>
+            <div style={{ transform:"rotate(180deg)", textAlign:"center" }}>
+              <span style={{ fontSize:11, fontFamily:"Georgia, serif", fontStyle:"italic", color:"#d0d0d0", lineHeight:1.3 }}>
+                {card.a}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {!isWho && !isHtH && (
+        <button onClick={() => setRotated(!rotated)} style={{
+          display:"block", margin:"12px auto 0", background:"transparent", color:"#444",
+          border:"1px solid #282828", borderRadius:20, padding:"8px 24px", fontSize:11,
+          fontWeight:600, cursor:"pointer", letterSpacing:0.5
+        }}>
+          {rotated ? "↻ Rotate back" : "↻ Rotate to read answer"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CardViewer({ onNext, onBack }) {
+  const [idx, setIdx] = useState(0);
+  const [filter, setFilter] = useState("All");
+  const [seenTypes, setSeenTypes] = useState(new Set());
+  const filtered = filter === "All" ? CARDS : CARDS.filter(c => c.type === filter);
+  const card = filtered[idx] || filtered[0];
+
+  useEffect(() => { setIdx(0); }, [filter]);
+
+  const isFirstOfType = !seenTypes.has(card.type);
+  useEffect(() => {
+    if (!seenTypes.has(card.type)) {
+      setSeenTypes(prev => new Set([...prev, card.type]));
+    }
+  }, [card.type]);
+
+  const goNext = () => { if (idx < filtered.length - 1) setIdx(idx+1); };
+  const goPrev = () => { if (idx > 0) setIdx(idx-1); };
+
+  const coreCount = CARDS.filter(c => CORE_TYPES.includes(c.type)).length;
+  const futureCount = CARDS.filter(c => !CORE_TYPES.includes(c.type)).length;
+
+  return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", padding:"1.5rem 1rem", background:"#111", color:"#f0ebe3" }}>
+      <div style={{ maxWidth:440, width:"100%" }}>
+        <div style={{ fontSize:11, letterSpacing:4, textTransform:"uppercase", color:"#C00000", marginBottom:6, fontWeight:600 }}>Sample cards</div>
+        <div style={{ fontSize:12, color:"#666", marginBottom:14 }}>{coreCount} core + {futureCount} future season previews</div>
+
+        <div style={{ background:"#1a1a1a", border:"1px solid #7F600055", borderRadius:8, padding:"10px 14px", marginBottom:14 }}>
+          <p style={{ fontSize:12, color:"#ccc", margin:0, lineHeight:1.5 }}>
+            <span style={{ fontWeight:700, color:"#f0ebe3" }}>Key concepts:</span> A <strong>Content Category</strong> is a theme — the cultural world the question lives in (e.g. Tsa Mmino = Music, eRenkini = Taxi rank, Ko Skolong = School). A <strong>Card Type</strong> is how you engage with that content — the game mechanic (e.g. Straight Shot = one question one answer, Qhuba = complete the line, Sbonise = perform).
+          </p>
+        </div>
+
+        <div style={{ background:"#1a1a1a", border:"1px solid #37562355", borderRadius:8, padding:"10px 14px", marginBottom:16 }}>
+          <p style={{ fontSize:12, color:"#ccc", margin:0, fontWeight:600 }}>Here are the card types. You can browse them all (tap All), or tap a specific card type to filter.</p>
+        </div>
+
+        <div style={{ marginBottom:6 }}>
+          <div style={{ display:"flex", gap:5, marginBottom:6, flexWrap:"wrap" }}>
+            {["All", ...CORE_TYPES].map(t => (
+              <button key={t} onClick={() => setFilter(t)} style={{
+                background: filter===t ? (TYPE_COLORS[t] || "#333") : "transparent",
+                color: filter===t ? "#fff" : "#888",
+                border: filter===t ? "none" : "1px solid #333",
+                borderRadius:16, padding:"5px 11px", fontSize:10.5, cursor:"pointer", fontWeight:filter===t ? 600 : 400,
+              }}>{t}</button>
+            ))}
+          </div>
+          <div style={{ fontSize:9, letterSpacing:1.5, textTransform:"uppercase", color:"#555", fontWeight:600, marginBottom:6, marginTop:4 }}>New card types</div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+            {FUTURE_TYPES_NAMES.map(t => (
+              <button key={t} onClick={() => setFilter(t)} style={{
+                background: filter===t ? (TYPE_COLORS[t] || "#333") : "transparent",
+                color: filter===t ? "#fff" : "#666",
+                border: filter===t ? "none" : "1px solid #282828",
+                borderRadius:16, padding:"5px 11px", fontSize:10.5, cursor:"pointer", fontWeight:filter===t ? 600 : 400,
+                fontStyle:"italic",
+              }}>{t}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginTop:16 }}>
+          <CardComponent card={card} showExplainer={isFirstOfType} />
+        </div>
+
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:16, marginBottom:28 }}>
+          <button onClick={goPrev} disabled={idx===0} style={{ background:"transparent", color:idx===0?"#282828":"#888", border:"1px solid #282828", borderRadius:8, padding:"10px 20px", fontSize:12, cursor:idx===0?"default":"pointer" }}>← Prev</button>
+          <span style={{ fontSize:12, color:"#555" }}>{idx+1} / {filtered.length}</span>
+          <button onClick={goNext} disabled={idx>=filtered.length-1} style={{ background:"transparent", color:idx>=filtered.length-1?"#282828":"#888", border:"1px solid #282828", borderRadius:8, padding:"10px 20px", fontSize:12, cursor:idx>=filtered.length-1?"default":"pointer" }}>Next →</button>
+        </div>
+
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={onBack} style={{ flex:1, background:"transparent", color:"#666", border:"1px solid #282828", borderRadius:8, padding:"12px", fontSize:13, cursor:"pointer" }}>Back</button>
+          <button onClick={onNext} style={{ flex:2, background:"#375623", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:13, fontWeight:600, cursor:"pointer" }}>What's next for LLL →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FutureScreen({ onNext, onBack }) {
+  return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", padding:"2rem 1.5rem", background:"#111", color:"#f0ebe3" }}>
+      <div style={{ maxWidth:440 }}>
+        <div style={{ fontSize:11, letterSpacing:4, textTransform:"uppercase", color:"#375623", marginBottom:16, fontWeight:600 }}>Expansion</div>
+        <h2 style={{ fontSize:22, fontWeight:700, marginBottom:6, fontFamily:"Georgia, serif" }}>Future seasons</h2>
+        <p style={{ fontSize:13, color:"#888", marginBottom:28, lineHeight:1.6 }}>New card types and editions can drop as seasonal releases. Each refreshes the game without replacing what you own.</p>
+
+        <h3 style={{ fontSize:12, fontWeight:600, marginBottom:14, color:"#7F6000", letterSpacing:1, textTransform:"uppercase" }}>New card types</h3>
+        <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:36 }}>
+          {FUTURE_TYPES_LIST.map((ft,i) => {
+            const meta = TYPE_META[ft.name];
+            const tc = TYPE_COLORS[ft.name];
+            return (
+              <div key={i} style={{ background:"#1a1a1a", borderRadius:10, padding:"14px 16px", border: ft.strong ? `1px solid ${tc}55` : "1px solid #222" }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, flexWrap:"wrap" }}>
+                  <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, textTransform:"uppercase", color:"#fff", background:tc, padding:"3px 10px", borderRadius:16 }}>{ft.name}</span>
+                  <span style={{ fontSize:11, color:"#888" }}>{meta.subtitle}</span>
+                  {ft.strong && <span style={{ fontSize:8, background:"#7F600033", color:"#7F6000", padding:"2px 8px", borderRadius:10, fontWeight:700, letterSpacing:0.5, marginLeft:"auto" }}>Strongest</span>}
+                  {meta.mode === "Host" && <span style={{ fontSize:8, background:"#D2691E22", color:"#D2691E", padding:"2px 8px", borderRadius:10, fontWeight:600 }}>Needs GM</span>}
+                </div>
+                <p style={{ fontSize:12, color:"#888", margin:0, lineHeight:1.55 }}>{meta.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        <h3 style={{ fontSize:12, fontWeight:600, marginBottom:14, color:"#C00000", letterSpacing:1, textTransform:"uppercase" }}>New editions</h3>
+        <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:28 }}>
+          {FUTURE_EDITIONS.map((ed,i) => (
+            <div key={i} style={{ background:"#1a1a1a", borderRadius:10, padding:"14px 16px", border:"1px solid #222" }}>
+              <div style={{ fontSize:13, fontWeight:700, marginBottom:3 }}>{ed.name}</div>
+              <p style={{ fontSize:12, color:"#888", margin:0, lineHeight:1.5 }}>{ed.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display:"flex", gap:10 }}>
+          <button onClick={onBack} style={{ flex:1, background:"transparent", color:"#666", border:"1px solid #282828", borderRadius:8, padding:"12px", fontSize:13, cursor:"pointer" }}>Back</button>
+          <button onClick={onNext} style={{ flex:2, background:"#C00000", color:"#fff", border:"none", borderRadius:8, padding:"12px", fontSize:13, fontWeight:600, cursor:"pointer" }}>Your thoughts, Jeff →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CardFormatDemo() {
+  const [option, setOption] = useState(1);
+  return (
+    <div style={{ background:"#1a1a1a", borderRadius:12, padding:"20px", border:"1px solid #282828", marginBottom:24 }}>
+      <div style={{ fontSize:11, fontWeight:600, letterSpacing:2, textTransform:"uppercase", color:"#7F6000", marginBottom:8 }}>Card format options</div>
+      <p style={{ fontSize:12, color:"#999", margin:"0 0 14px", lineHeight:1.5 }}>Which option for cards: a single card, or a double card with a box?</p>
+      <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+        <button onClick={() => setOption(1)} style={{ flex:1, background:option===1?"#282828":"transparent", color:option===1?"#fff":"#666", border:"1px solid #333", borderRadius:6, padding:"8px", fontSize:11, fontWeight:600, cursor:"pointer" }}>Option 1: Single card</button>
+        <button onClick={() => setOption(2)} style={{ flex:1, background:option===2?"#282828":"transparent", color:option===2?"#fff":"#666", border:"1px solid #333", borderRadius:6, padding:"8px", fontSize:11, fontWeight:600, cursor:"pointer" }}>Option 2: Double-up</button>
+      </div>
+
+      {option === 1 ? (
+        <div>
+          <div style={{ display:"flex", gap:12, justifyContent:"center", marginBottom:12 }}>
+            <div style={{ width:100, height:150, borderRadius:8, border:"1px solid #444", background:"#fff", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+              <div style={{ background:"#C00000", padding:"3px 6px" }}><span style={{ fontSize:7, color:"#fff", fontWeight:600 }}>STRAIGHT SHOT</span></div>
+              <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"6px" }}>
+                <span style={{ fontSize:8, color:"#1a1a1a", textAlign:"center", fontWeight:500 }}>A marriage proposal that is also a car brand?</span>
+              </div>
+              <div style={{ padding:"4px 6px", borderTop:"1px solid #eee", textAlign:"center" }}>
+                <span style={{ fontSize:6, fontStyle:"italic", color:"#ccc", transform:"rotate(180deg)", display:"inline-block" }}>BMW (Be My Wife)</span>
+              </div>
+            </div>
+            <div style={{ width:100, height:150, borderRadius:8, border:"1px solid #444", background:"#C00000", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ textAlign:"center" }}>
+                <div style={{ fontSize:10, fontWeight:800, color:"#fff", lineHeight:1.2 }}>LLL</div>
+                <div style={{ fontSize:5, color:"rgba(255,255,255,0.6)", marginTop:2 }}>Location Lekeyshini Lokasie</div>
+              </div>
+            </div>
+          </div>
+          <p style={{ fontSize:11, color:"#888", textAlign:"center", margin:0, lineHeight:1.5 }}>Question on front, LLL logo on back. Answer upside-down on the question side. No special box needed — standard face-down pile.</p>
+        </div>
+      ) : (
+        <div>
+          <div style={{ display:"flex", gap:12, justifyContent:"center", marginBottom:12 }}>
+            <div style={{ width:100, height:150, borderRadius:8, border:"1px solid #444", background:"#fff", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+              <div style={{ background:"#C00000", padding:"3px 6px" }}><span style={{ fontSize:7, color:"#fff", fontWeight:600 }}>STRAIGHT SHOT</span></div>
+              <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"6px" }}>
+                <span style={{ fontSize:8, color:"#1a1a1a", textAlign:"center", fontWeight:500 }}>Question A</span>
+              </div>
+              <div style={{ padding:"4px 6px", borderTop:"1px solid #eee", textAlign:"center" }}>
+                <span style={{ fontSize:6, fontStyle:"italic", color:"#ccc", transform:"rotate(180deg)", display:"inline-block" }}>Answer A</span>
+              </div>
+            </div>
+            <div style={{ width:100, height:150, borderRadius:8, border:"1px solid #444", background:"#fff", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+              <div style={{ background:"#375623", padding:"3px 6px" }}><span style={{ fontSize:7, color:"#fff", fontWeight:600 }}>QHUBA</span></div>
+              <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"6px" }}>
+                <span style={{ fontSize:8, color:"#1a1a1a", textAlign:"center", fontWeight:500 }}>Question B</span>
+              </div>
+              <div style={{ padding:"4px 6px", borderTop:"1px solid #eee", textAlign:"center" }}>
+                <span style={{ fontSize:6, fontStyle:"italic", color:"#ccc", transform:"rotate(180deg)", display:"inline-block" }}>Answer B</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}>
+            <svg width="120" height="90" viewBox="0 0 120 90">
+              <rect x="10" y="10" width="100" height="70" rx="4" fill="none" stroke="#555" strokeWidth="1.5"/>
+              <rect x="10" y="10" width="100" height="12" rx="4" fill="none" stroke="#555" strokeWidth="1.5"/>
+              <path d="M 48 10 Q 48 4 54 4 L 66 4 Q 72 4 72 10" fill="#111" stroke="#888" strokeWidth="1.5"/>
+              <text x="60" y="22" fill="#555" fontSize="5" textAnchor="middle" fontWeight="600">↑ THUMB CUTOUT</text>
+              <rect x="20" y="32" width="35" height="40" rx="2" fill="none" stroke="#444" strokeWidth="0.75" strokeDasharray="2"/>
+              <rect x="65" y="32" width="35" height="40" rx="2" fill="none" stroke="#444" strokeWidth="0.75" strokeDasharray="2"/>
+              <text x="37" y="55" fill="#555" fontSize="5" textAnchor="middle">cards</text>
+              <text x="82" y="55" fill="#555" fontSize="5" textAnchor="middle">discard</text>
+            </svg>
+          </div>
+          <p style={{ fontSize:11, color:"#888", textAlign:"center", margin:0, lineHeight:1.5 }}>Two questions per card (one each side), à la 30 Seconds. Doubles the content per card. Needs a box with a thumb cutout so drawing only reveals the top edge.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeedbackScreen({ onBack }) {
+  return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", padding:"2rem 1.5rem", background:"#111", color:"#f0ebe3" }}>
+      <div style={{ maxWidth:440 }}>
+        <div style={{ fontSize:11, letterSpacing:4, textTransform:"uppercase", color:"#C00000", marginBottom:16, fontWeight:600 }}>Over to you</div>
+        <h2 style={{ fontSize:22, fontWeight:700, marginBottom:6, fontFamily:"Georgia, serif" }}>Jeff, three questions</h2>
+        <p style={{ fontSize:13, color:"#888", marginBottom:28, lineHeight:1.6 }}>Everything here is a prototype — built to be reshaped by your creative direction.</p>
+
+        <div style={{ display:"flex", flexDirection:"column", gap:14, marginBottom:28 }}>
+          <div style={{ background:"#1a1a1a", borderRadius:12, padding:"18px", border:"1px solid #282828" }}>
+            <div style={{ fontSize:10, fontWeight:600, letterSpacing:2, textTransform:"uppercase", color:"#C00000", marginBottom:8 }}>Question 1</div>
+            <p style={{ fontSize:14, fontWeight:600, margin:"0 0 6px", lineHeight:1.4 }}>Do these card types feel like LLL?</p>
+            <p style={{ fontSize:12, color:"#888", margin:0, lineHeight:1.5 }}>4 core types + 5 future types. Does the mix capture the energy of the live show and the board game?</p>
+          </div>
+          <div style={{ background:"#1a1a1a", borderRadius:12, padding:"18px", border:"1px solid #282828" }}>
+            <div style={{ fontSize:10, fontWeight:600, letterSpacing:2, textTransform:"uppercase", color:"#375623", marginBottom:8 }}>Question 2</div>
+            <p style={{ fontSize:14, fontWeight:600, margin:"0 0 6px", lineHeight:1.4 }}>Can we put together a writing session with writers to build the game from scratch?</p>
+            <p style={{ fontSize:12, color:"#888", margin:0, lineHeight:1.5 }}>The card types and content blocks must come from a collective voice. Happy for anything here to be scrapped.</p>
+          </div>
+          <div style={{ background:"#1a1a1a", borderRadius:12, padding:"18px", border:"1px solid #282828" }}>
+            <div style={{ fontSize:10, fontWeight:600, letterSpacing:2, textTransform:"uppercase", color:"#7F6000", marginBottom:8 }}>Question 3</div>
+            <p style={{ fontSize:14, fontWeight:600, margin:"0 0 6px", lineHeight:1.4 }}>Where should LLL expand?</p>
+            <p style={{ fontSize:12, color:"#888", margin:0, lineHeight:1.5 }}>New card types in seasonal drops. Regional editions (Durban, Cape Town). Cultural editions (Every Hood Every Ghetto, Umlando). What calls to you?</p>
+          </div>
+        </div>
+
+        <CardFormatDemo />
+
+        <div style={{ background:"#1a1a1a", borderRadius:10, padding:"14px 16px", marginBottom:28, border:"1px solid #282828" }}>
+          <p style={{ fontSize:12, color:"#888", margin:0, lineHeight:1.6 }}><span style={{ fontWeight:600, color:"#ddd" }}>Reminder:</span> This is a design prototype. Card design, content, scoring, and format are all built to be iterated on with your input.</p>
+        </div>
+
+        <button onClick={onBack} style={{ width:"100%", background:"transparent", color:"#666", border:"1px solid #282828", borderRadius:8, padding:"12px", fontSize:13, cursor:"pointer" }}>← Back to cards</button>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [screen, setScreen] = useState(0);
+  return (
+    <div style={{ fontFamily:"'Helvetica Neue', Helvetica, Arial, sans-serif", margin:0, padding:0 }}>
+      {screen===0 && <IntroScreen onNext={() => setScreen(1)} />}
+      {screen===1 && <TurnScreen onNext={() => setScreen(2)} onBack={() => setScreen(0)} />}
+      {screen===2 && <CardViewer onNext={() => setScreen(3)} onBack={() => setScreen(1)} />}
+      {screen===3 && <FutureScreen onNext={() => setScreen(4)} onBack={() => setScreen(2)} />}
+      {screen===4 && <FeedbackScreen onBack={() => setScreen(2)} />}
+    </div>
+  );
+}
