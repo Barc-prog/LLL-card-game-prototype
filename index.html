@@ -428,11 +428,18 @@ function CardComponent({ card, showExplainer }) {
         </div>
 
         {!isWho && !isHtH && (
-          <div style={{ padding:"10px 14px", borderTop:"1px solid #eee", background:"#f8f8f8" }}>
-            <div style={{ transform:"rotate(180deg)", textAlign:"center" }}>
-              <span style={{ fontSize:11, fontFamily:"Georgia, serif", fontStyle:"italic", color:"#d0d0d0", lineHeight:1.3 }}>
-                {card.a}
-              </span>
+          <div style={{ borderTop:"1px solid #eee", background:"#f8f8f8" }}>
+            {card.type === "Three-for-Three" && (
+              <div style={{ padding:"8px 14px 0", textAlign:"center" }}>
+                <span style={{ fontSize:9.5, color:"#999", lineHeight:1.4, fontStyle:"italic" }}>Team must give answers one at a time; card holder confirms "Right" or "Wrong" one at a time. Three total chances then move on.</span>
+              </div>
+            )}
+            <div style={{ padding:"8px 14px 10px", textAlign:"center" }}>
+              <div style={{ transform:"rotate(180deg)" }}>
+                <span style={{ fontSize:11, fontFamily:"Georgia, serif", fontStyle:"italic", color:"#d0d0d0", lineHeight:1.3 }}>
+                  {card.a}
+                </span>
+              </div>
             </div>
           </div>
         )}
